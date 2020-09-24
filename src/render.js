@@ -7,6 +7,7 @@ const openBtn = document.getElementById('openBtn')
 const convertBtn = document.getElementById('convertBtn')
 
 // Listeners
+generateBtn.addEventListener('click', handleGenerate, false)
 openBtn.addEventListener('click', handleOpen, false)
 convertBtn.addEventListener('click', handleConvert, false)
 
@@ -14,7 +15,7 @@ convertBtn.addEventListener('click', handleConvert, false)
 const canvas = document.createElement('canvas')
 canvas.width = 512
 canvas.height = 512
-// document.body.appendChild(canvas)
+// document.body.appendChild(canvas) // temp
 const ctx = canvas.getContext('2d')
 
 // Header (TEMP?)
@@ -96,4 +97,58 @@ function processCanvas() {
 
     out = header + out
     return out
+}
+
+async function createNeutralHald() {
+    const imageData = ctx.createImageData(512, 512)
+
+    console.time('draw')
+    let i = 0
+    let b = 0
+    while (b < 64) {
+        let g = 0
+        while (g < 64) {
+            let r = 0
+            while (r < 64) {
+        
+                imageData.data[i] = Math.round(r * (255 / 63))
+                imageData.data[i + 1] = Math.round(g * (255 / 63))
+                imageData.data[i + 2] = Math.round(b * (255 / 63))
+                imageData.data[i + 3] = 255
+        
+                r++
+                i = i + 4
+            }
+            g++
+        }
+        b++
+    }
+    console.timeEnd('draw')
+
+    ctx.putImageData(imageData, 0, 0)
+    const blob = await new Promise ((res) => canvas.toBlob(blob => res(blob), 'image/jpg', 1))
+    return Buffer.from(await blob.arrayBuffer())
+}
+
+async function handleGenerate() {
+    const { filePath } = await dialog.showSaveDialog({
+        buttonLabel: 'Save HALD',
+        defaultPath: `NeutralHald_64`,
+        filters: [
+            { name: 'jpeg', extensions: ['jpg'] }
+        ],
+    })
+
+    const buffer = await createNeutralHald()
+
+    // const blob = await new Promise ((res) => canvas.toBlob(blob => res(blob), 'image/jpg', 1))
+    // const buffer = Buffer.from(await blob.arrayBuffer())
+
+    try {
+        await fs.writeFile(filePath, buffer)
+        console.log(`✅ HALD Succesfully saved to ${filePath}`)
+    } catch (err) {
+        console.error(`⚠ The HALD could not be saved to ${filePath}`)
+        return
+    }
 }
