@@ -2,16 +2,25 @@
 <html>
   <head>
     <meta charset="UTF-8">
-    <title>Hello World!</title>
+    <title>LUT Generator</title>
     <link rel="stylesheet" href="index.css">
     <script defer src="render.js"></script>
   </head>
   <body>
-    <h1>📸 LUT Generator</h1>
-    <p>Welcome to your Electron application.</p>
-    
-    <button id="generateBtn">Generate HALD</button>
-    <button id="openBtn">Open HALD</button>
-    <button id="convertBtn" disabled>Convert to LUT</button>
+    <div class="container">
+      <p id="loadedLut"></p>
+      <div class="preview" id="openBtn">
+        <p>Load HALD</p>
+        <img alt="Loaded HALD" id="previewImage" class="preview-image">
+      </div>
+      <input type="text" name="title" id="title">
+      <div class="main">
+        <button class="btn btn-primary" id="convertBtn" disabled>Save to .cube</button>
+        <div class="new-hald">
+          <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Esse, voluptatum!</p>
+          <button class="btn btn-oom" id="generateBtn">Generate HALD</button>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

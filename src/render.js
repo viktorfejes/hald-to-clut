@@ -1,7 +1,10 @@
 const fs = require('graceful-fs').promises
 const { dialog } = require('electron').remote
 
-// Buttons
+// Elements
+const titleInp = document.getElementById('title')
+const loadState = document.getElementById('loadedLut')
+const prevImg = document.getElementById('previewImage')
 const generateBtn = document.getElementById('generateBtn')
 const openBtn = document.getElementById('openBtn')
 const convertBtn = document.getElementById('convertBtn')
@@ -10,6 +13,7 @@ const convertBtn = document.getElementById('convertBtn')
 generateBtn.addEventListener('click', handleGenerate, false)
 openBtn.addEventListener('click', handleOpen, false)
 convertBtn.addEventListener('click', handleConvert, false)
+titleInp.addEventListener('keyup', handleInput, false)
 
 // Canvas
 const canvas = document.createElement('canvas')
@@ -18,22 +22,51 @@ canvas.height = 512
 // document.body.appendChild(canvas) // temp
 const ctx = canvas.getContext('2d')
 
-// Header (TEMP?)
-const header =
-`#Created by: VF LUT Generator
-#Copyright: (C) Copyright 2020 © Viktor Fejes
-#Website: https://viktorfejes.com
-TITLE "Test LUT bla-bla"
+// State Handling
+const state = {
+    title: '',
+    loaded: false,
+    filePath: '',
+    setState: function(target, value) {
+        this[target] = value
+        stateChange(target, value)
+    }
+}
 
-#LUT size
-LUT_3D_SIZE 64
+function stateChange(target, value) {
+    console.log(`State of ${target} has changed to ${value}`)
 
-#data domain
-DOMAIN_MIN 0.0 0.0 0.0
-DOMAIN_MAX 1.0 1.0 1.0
+    switch (target) {
+        case 'loaded':
+            if (value === true) {
+                prevImg.classList.add('isLoaded')
+                prevImg.src = state.filePath
+            } else {
+                prevImg.classList.remove('isLoaded')
+                prevImg.src = ''
+            }
+            break;
+    
+        default:
+            break;
+    }
+}
 
-#LUT data points
-`
+function handleInput(e) {
+    // title = e.target.value
+    state.setState('title', e.target.value)
+}
+
+function setLoadState(state, path) {
+    loaded = state
+    filePath = path
+
+    if (state === true) {
+        loadState.innerText = path
+    } else {
+        loadState.innerText = ''
+    }
+}
 
 async function handleOpen() {
     // Disable convert btn while loading new HALD
@@ -53,6 +86,9 @@ async function handleOpen() {
         ctx.drawImage(img, 0, 0)
         // allow convert only after image has loaded
         convertBtn.disabled = false
+
+        state.setState('filePath', filePaths[0])
+        state.setState('loaded', true)
     }
 }
 
@@ -69,6 +105,7 @@ async function handleConvert() {
 
     try {
         await fs.writeFile(filePath, data)
+        setLoadState(false, '')
         console.log(`✅ LUT Succesfully saved to ${filePath}`)
     } catch (err) {
         console.error(`⚠ The LUT could not be saved to ${filePath}`)
@@ -95,6 +132,23 @@ function processCanvas() {
         y++
     }
 
+    // Header
+    let header =
+    `#Created by: VF LUT Generator
+    #Copyright: (C) Copyright 2020 © Viktor Fejes
+    #Website: https://viktorfejes.com
+    TITLE "${state.title}"
+
+    #LUT size
+    LUT_3D_SIZE 64
+
+    #data domain
+    DOMAIN_MIN 0.0 0.0 0.0
+    DOMAIN_MAX 1.0 1.0 1.0
+
+    #LUT data points
+    `
+
     out = header + out
     return out
 }
@@ -102,7 +156,6 @@ function processCanvas() {
 async function createNeutralHald() {
     const imageData = ctx.createImageData(512, 512)
 
-    console.time('draw')
     let i = 0
     let b = 0
     while (b < 64) {
@@ -123,7 +176,6 @@ async function createNeutralHald() {
         }
         b++
     }
-    console.timeEnd('draw')
 
     ctx.putImageData(imageData, 0, 0)
     const blob = await new Promise ((res) => canvas.toBlob(blob => res(blob), 'image/jpg', 1))
@@ -140,9 +192,6 @@ async function handleGenerate() {
     })
 
     const buffer = await createNeutralHald()
-
-    // const blob = await new Promise ((res) => canvas.toBlob(blob => res(blob), 'image/jpg', 1))
-    // const buffer = Buffer.from(await blob.arrayBuffer())
 
     try {
         await fs.writeFile(filePath, buffer)
